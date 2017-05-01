@@ -9,6 +9,7 @@ class ContainerTest extends PHPUnit_Framework_TestCase
 	public function adapterProvider() {
 		return [
 			["Simple",    "readwrite"],
+			["File",      "readwrite"],
 		];
 	}
 	
