@@ -5,7 +5,7 @@
     	"container", "abstraction", "case-insensitive", "array", 
     	"file", "config"
     ],
-    "type": "project",
+    "type": "library",
     "license": "MIT",
     "authors": [
         {
