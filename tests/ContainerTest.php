@@ -10,6 +10,7 @@ class ContainerTest extends PHPUnit_Framework_TestCase
 		return [
 			["Simple",    "readwrite"],
 			["File",      "readwrite"],
+			["Config",    "readonly" ],
 		];
 	}
 	
