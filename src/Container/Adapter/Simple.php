@@ -6,7 +6,7 @@ class Simple extends AbstractAdapter
 {
 	protected $data;
 	
-	function __construct($init=null) 
+	function __construct($init=[]) 
 	{
 		$this->data = $init;
 	}

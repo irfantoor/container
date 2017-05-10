@@ -2,9 +2,9 @@
  
 use IrfanTOOR\Container;
 use IrfanTOOR\Container\Adapter\Simple;
-
+use IrfanTOOR\Container\Adapter\DecoratorNoCase;
  
-class ContainerTest extends PHPUnit_Framework_TestCase 
+class ContainerDecoratorTest extends PHPUnit_Framework_TestCase 
 {
 	public function adapterProvider() {
 		return [
@@ -17,26 +17,25 @@ class ContainerTest extends PHPUnit_Framework_TestCase
 	public function containerProvider() {
 		return [
 			["Container"],
-			["ContainerCI"],
 		];
 	}
+	
+	public function processArray($data) {
+		$a = [];
+		foreach ($data as $k=>$v) {
+			$a[strtolower($k)] = ["id"=>$k, "value"=>$v];
+		}
 		
-	public function methodsProvider() {
-		return [
-			["get"],
-			["has"],
-			["set"],
-			["remove"],
-			["toArray"],
-		];
-	}	
-
+		return $a;
+	}
+	
 	public function getAdapter($type) {
-		$data = [
+		$data = $this->processArray([
 			'defined' => 'defined',
 			'null' 	  => null,
 			'array'   => ['k1' => 'v1'],
-		];
+		]);
+		
 		
 		switch($type) {
 			case "File":
@@ -63,7 +62,9 @@ class ContainerTest extends PHPUnit_Framework_TestCase
 		# $adapter = $prophecy->reveal($data);
 		$class = "IrfanTOOR\\Container\\Adapter\\" . $type;
 		$adapter = new $class($data);
-		return $adapter;
+		$decorator = new DecoratorNoCase($adapter);
+		
+		return $decorator;
 	}
 	
 	function getContainer($type, $atype) {
@@ -95,10 +96,10 @@ class ContainerTest extends PHPUnit_Framework_TestCase
 			$cname = $v[0];
 			$container = $this->getContainer($cname, $type);
 		
-			$this->assertTrue($container->has('defined'));
-			$this->assertTrue($container->has('null'));
-			$this->assertTrue($container->has('array'));
-			$this->assertFalse($container->has('not-defined'));
+			$this->assertTrue($container->has('Defined'));
+			$this->assertTrue($container->has('NULL'));
+			$this->assertTrue($container->has('ARray'));
+			$this->assertFalse($container->has('not-DEFINED'));
 
 			$this->assertFalse($container->has(null));
 			$this->assertFalse($container->has($this));
@@ -116,10 +117,10 @@ class ContainerTest extends PHPUnit_Framework_TestCase
 			$cname = $v[0];
 			$container = $this->getContainer($cname, $type);
 				
-			$this->assertEquals('defined', $container->get('defined'));
-			$this->assertNull($container->get('null'));
-			$this->assertArrayHasKey('k1', $container->get('array'));
-			$this->assertEquals('v1', $container->get('array')['k1']);
+			$this->assertEquals('defined', $container->get('Defined'));
+			$this->assertNull($container->get('NULL'));
+			$this->assertArrayHasKey('k1', $container->get('ARray'));
+			$this->assertEquals('v1', $container->get('ARray')['k1']);
 			$this->assertEquals('hello', $container->get("undefind", "hello"));
 		}
 	}
@@ -159,13 +160,13 @@ class ContainerTest extends PHPUnit_Framework_TestCase
 				# define an entry not previously defined
 				$this->assertFalse($container->has('not-defined'));
 				$container->set('not-defined', null);
-				$this->assertTrue($container->has('not-defined'));
-				$this->assertNull($container->get('not-defined'));
+				$this->assertTrue($container->has('not-Defined'));
+				$this->assertNull($container->get('not-DEFINED'));
 
 				# define an entry previously defined
 				$container->set('not-defined', 'now-defined');
-				$this->assertTrue($container->has('not-defined'));
-				$this->assertEquals('now-defined', $container->get('not-defined'));
+				$this->assertTrue($container->has('not-Defined'));
+				$this->assertEquals('now-defined', $container->get('not-DEFINED'));
 
 				# Set a class
 				$class = new TestClass('hello');
@@ -239,9 +240,9 @@ class ContainerTest extends PHPUnit_Framework_TestCase
 			$container = $this->getContainer($cname, $type);	
 	
 			if ($readwrite == "readwrite") {
-				$this->assertEquals("defined", $container->get("defined"));
-				$container->remove("defined");
-				$this->assertFalse($container->has("defined"));
+				$this->assertEquals("defined", $container->get("Defined"));
+				$container->remove("DEFINED");
+				$this->assertFalse($container->has("Defined"));
 			}
 			else {		
 				$this->expectException(IrfanTOOR\Container\Exception::class);
