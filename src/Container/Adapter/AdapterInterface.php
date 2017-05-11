@@ -1,6 +1,6 @@
 <?php
 
-namespace IrfanTOOR\Container;
+namespace IrfanTOOR\Container\Adapter;
 
 Interface AdapterInterface 
 {

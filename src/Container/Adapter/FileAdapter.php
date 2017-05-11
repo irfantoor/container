@@ -4,10 +4,9 @@ namespace IrfanTOOR\Container\Adapter;
 
 use IrfanTOOR\Container\Exception;
 
-class File extends AbstractAdapter
+class FileAdapter extends AbstractAdapter
 {
 	protected $file;
-	protected $data;
 	
 	function __construct($file, $create_file=false) 
 	{
@@ -16,36 +15,22 @@ class File extends AbstractAdapter
 				file_put_contents($file, json_encode([]));
 			else
 				throw new Exception("file ***{$file}*** not found");
+		} 
+		else {
+			$this->data = json_decode(file_get_contents($file), 1);
 		}
 		$this->file = $file;
-		$this->data = json_decode(file_get_contents($file), 1);
 	}
 	
-	function get($id) 
+	function set($id, $value=null)
 	{
-		return $this->data[$id];
-	}
-	
-	function has($id) 
-	{
-		return array_key_exists($id, $this->data);
-	}
-	
-	public function set($id, $value)
-	{
-		$this->data[$id] = $value;
+		parent::set($id, $value);
 		file_put_contents($this->file, json_encode($this->data));
 	}
 	
-	public function remove($id)
+	function remove($id)
 	{
-		if ($this->has($id))
-			unset($this->data[$id]);
+		parent::remove($id);
 		file_put_contents($this->file, json_encode($this->data));
 	}	
-	
-	public function toArray() 
-	{
-		return $this->data;
-	}
 }

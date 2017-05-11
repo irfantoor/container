@@ -5,15 +5,17 @@ namespace IrfanTOOR;
 use Psr\Container\ContainerInterface;
 use IrfanTOOR\Container\NotFoundException;
 use IrfanTOOR\Container\ContainerException;
-use IrfanTOOR\Container\AdapterInterface;
+use IrfanTOOR\Container\Adapter\AdapterInterface;
 
 class Container implements ContainerInterface
 {
 	protected $adapter;
 	
-	function __construct(AdapterInterface $adapter) 
+	function __construct(AdapterInterface $adapter, $init=[])
 	{
 		$this->adapter = $adapter;
+		if ($init)
+				$this->adapter->set($init);
 	}
 	
 	function normalize($id) {
@@ -63,7 +65,7 @@ class Container implements ContainerInterface
     	return $this->adapter->has($id);    		
     }
     
-    public function set($id, $value) {
+    public function set($id, $value=null) {
     	$this->adapter->set($id, $value);
     }
     
