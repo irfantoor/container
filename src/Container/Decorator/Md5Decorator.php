@@ -1,6 +1,6 @@
 <?php
 
-namespace IrfanTOOR\Container\AdapterDecorator;
+namespace IrfanTOOR\Container\Decorator;
 
 class Md5Decorator extends AbstractDecorator
 {	
