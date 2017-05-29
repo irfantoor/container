@@ -9,11 +9,15 @@ abstract class AbstractDecorator implements AdapterInterface
 {
 	protected $adapter;
 	
-	function __construct($init=[], AdapterInterface $adapter) {
-		$this->adapter = $adapter;
-		
-		foreach($init as $k=>$v)
-			$this->set($k, $v);
+	function __construct($init=[]) {
+		if (is_array($init)) {
+			$this->adapter = new ArrayAdapter;
+			foreach($init as $k=>$v)
+				$this->set($k, $v);
+		}
+		else {
+			$this->adapter = $init ?: new ArrayAdapter;		
+		}
 	}
 	
 	function get($id, $default=null){
