@@ -6,10 +6,16 @@ use Psr\Container\ContainerInterface;
 
 use IrfanTOOR\Container\NotFoundException;
 use IrfanTOOR\Container\ContainerException;
-use IrfanTOOR\Container\Decorator\NullDecorator;
+use IrfanTOOR\Container\Decorator\AbstractDecorator;
+use IrfanTOOR\Container\Adapter\ArrayAdapter;
 
-class Container extends NullDecorator implements ContainerInterface
+class Container extends AbstractDecorator implements ContainerInterface
 {
+	function __construct($init=[], $adapter_or_decorator=null) {
+		$adapter_or_decorator = $adapter_or_decorator ? : new ArrayAdapter;
+		parent::__construct($init, $adapter_or_decorator);
+	}
+	
     public function get($id, $default=null)
     {
     	if ($this->has($id)) 

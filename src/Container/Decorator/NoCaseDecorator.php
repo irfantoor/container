@@ -4,14 +4,6 @@ namespace IrfanTOOR\Container\Decorator;
 
 class NoCaseDecorator extends AbstractDecorator
 {
-	protected $adpater;
-	
-	function __construct($adapter, $init=[]) {
-		$this->adapter = $adapter;
-		foreach($init as $k=>$v)
-			$this->set($k, $v);
-	}
-	
 	function get($id, $default=null) {
 		if ($this->has(strtolower($id))) {
 			$result = $this->adapter->get(strtolower($id));

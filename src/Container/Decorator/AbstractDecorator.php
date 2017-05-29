@@ -3,12 +3,13 @@
 namespace IrfanTOOR\Container\Decorator;
 
 use IrfanTOOR\Container\Adapter\AdapterInterface;
+use IrfanTOOR\Container\Adapter\ArrayAdapter;
 
 abstract class AbstractDecorator implements AdapterInterface 
 {
 	protected $adapter;
 	
-	function __construct(AdapterInterface $adapter, $init=[]) {
+	function __construct($init=[], AdapterInterface $adapter) {
 		$this->adapter = $adapter;
 		
 		foreach($init as $k=>$v)

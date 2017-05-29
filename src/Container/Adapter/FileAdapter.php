@@ -7,7 +7,7 @@ class FileAdapter extends AbstractAdapter
 	protected $data;
 	protected $file;
 	
-	function __construct($file, $init=[]) {
+	function __construct($init=[], $file) {
 		$this->file = $file;
 		
 		if (!file_exists($file)) {

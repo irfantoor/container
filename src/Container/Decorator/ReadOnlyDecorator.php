@@ -7,8 +7,8 @@ use IrfanTOOR\Container\Exception;
 class ReadOnlyDecorator extends AbstractDecorator
 {
 	protected $locked = false;
-	function __construct($adapter, $init=[]) {
-		parent::__construct($adapter, $init);
+	function __construct($init=[], $adapter=null) {
+		parent::__construct($init, $adapter);
 		
 		$this->locked = true;
 	}

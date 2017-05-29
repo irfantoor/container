@@ -8,6 +8,7 @@ class ContainerTest extends PHPUnit_Framework_TestCase
 {
 	function adProvider() {
 		$a = [
+			null,
 			"ArrayAdapter",
 			"FileAdapter",
 			# "FileSystemAdapter"
@@ -39,7 +40,8 @@ class ContainerTest extends PHPUnit_Framework_TestCase
 	}
 		
 	function getAdapter($adapter, $decorator) {
-		$class = "IrfanTOOR\\Container\\Adapter\\" . $adapter;
+		$class = $adapter ? "IrfanTOOR\\Container\\Adapter\\" . $adapter :
+			"IrfanTOOR\\Container\\Adapter\\ArrayAdapter";
 		
 		if ($decorator == "NoCaseDecorator") {
 			$data = [
@@ -56,6 +58,7 @@ class ContainerTest extends PHPUnit_Framework_TestCase
 			];
 		}
 		switch($adapter) {
+			case null:
 			case "ArrayAdapter":
 				$adapter = new $class();
 				break;
@@ -65,7 +68,7 @@ class ContainerTest extends PHPUnit_Framework_TestCase
 				if (file_exists($file))
 					unlink($file);
 
-				$adapter = new $class($file);
+				$adapter = new $class([], $file);
 				break;
 				
 			case "FileSystemAdapter":
@@ -84,13 +87,13 @@ class ContainerTest extends PHPUnit_Framework_TestCase
 		
 		
 		$decorator = "IrfanTOOR\\Container\\Decorator\\" . $decorator;
-		return new $decorator($adapter, $data);
+		return new $decorator($data, $adapter);
 	}
 	
 	function getContainer($adapter, $decorator) {
 		$adapter = $this->getAdapter($adapter, $decorator);
 		
-		return new Container($adapter);
+		return new Container([], $adapter);
 	}
 
     /**
