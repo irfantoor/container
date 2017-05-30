@@ -31,14 +31,22 @@ abstract class AbstractAdapter implements AdapterInterface
     }
     
     function set($id, $value=null) 
-    {    		
-    	if (is_string($id)) {
+    {
+		if (is_array($id)) {
+			foreach ($id as $k=>$v)
+				$this->set($k, $v);
+		}
+		elseif (is_string($id)) {
 		    $this->data[$id] = $value;
 	    }
     }
     
     function remove($id) {
-		if ($this->has($id)) {
+		if (is_array($id)) {
+			foreach ($id as $k)
+				$this->remove($k);
+		}
+		elseif ($this->has($id)) {
 			unset($this->data[$id]);
 		}
     }

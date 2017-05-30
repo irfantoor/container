@@ -4,6 +4,7 @@ namespace IrfanTOOR\Container\Decorator;
 
 use IrfanTOOR\Container\Adapter\AdapterInterface;
 use IrfanTOOR\Container\Adapter\ArrayAdapter;
+use IrfanTOOR\Container\Adapter\FileAdapter;
 
 abstract class AbstractDecorator implements AdapterInterface 
 {
@@ -15,11 +16,15 @@ abstract class AbstractDecorator implements AdapterInterface
 			foreach($init as $k=>$v)
 				$this->set($k, $v);
 		}
+		elseif (is_string($init)) {
+			$file = $init;
+			$this->adapter = new FileAdapter($file);
+		}
 		else {
 			$this->adapter = $init ?: new ArrayAdapter;		
 		}
 	}
-	
+		
 	function get($id, $default=null){
 		return $this->adapter->get($id, $default);
 	}
@@ -29,11 +34,23 @@ abstract class AbstractDecorator implements AdapterInterface
 	}
 	
 	function set($id, $value=null) {
-		$this->adapter->set($id, $value);
+		if (is_array($id)) {
+			foreach ($id as $k=>$v)
+				$this->set($k, $v);
+		}
+		else {	
+			$this->adapter->set($id, $value);
+		}
 	}
 	
 	function remove($id){
-		$this->adapter->remove($id);
+		if (is_array($id)) {
+			foreach ($id as $k)
+				$this->remove($k);
+		}
+		else {
+			$this->adapter->remove($id);
+		}
 	}
 	
 	function toArray() {

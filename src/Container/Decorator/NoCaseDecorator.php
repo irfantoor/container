@@ -18,11 +18,23 @@ class NoCaseDecorator extends AbstractDecorator
 	}
 	
 	function set($id, $value=null) {
-		$this->adapter->set(strtolower($id), [$id, $value]);
+		if (is_array($id)) {
+			foreach ($id as $k=>$v)
+				$this->set($k, $v);
+		} 
+		elseif (is_string($id)) {
+			$this->adapter->set(strtolower($id), [$id, $value]);
+		}
 	}
 	
 	function remove($id) {
-		$this->adapter->remove(strtolower($id));
+		if (is_array($id)) {
+			foreach ($id as $k)
+				$this->remove($k);
+		}
+		elseif (is_string($id)) {
+			$this->adapter->remove(strtolower($id));
+		}
 	}
 	
 	function toArray() {

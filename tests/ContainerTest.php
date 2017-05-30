@@ -11,14 +11,15 @@ class ContainerTest extends PHPUnit_Framework_TestCase
 			null,
 			"ArrayAdapter",
 			"FileAdapter",
-			# "FileSystemAdapter"
+			#"FileSystemAdapter"
 		];
 		
 		$d = [
+			null,
 			"NullDecorator",
 			"NoCaseDecorator",
 			"ReadOnlyDecorator",
-			# "Md5Decorator",
+			# "MD5Decorator",
 		];
 		
 		$c = [];
@@ -39,63 +40,90 @@ class ContainerTest extends PHPUnit_Framework_TestCase
 		return $a;
 	}
 		
-	function getAdapter($adapter, $decorator) {
-		$class = $adapter ? "IrfanTOOR\\Container\\Adapter\\" . $adapter :
+	function getData($adapter, $decorator) {
+	
+		$a = $adapter ? "IrfanTOOR\\Container\\Adapter\\" . $adapter :
 			"IrfanTOOR\\Container\\Adapter\\ArrayAdapter";
+		
+		$d = "IrfanTOOR\\Container\\Decorator\\" . $decorator;
 		
 		if ($decorator == "NoCaseDecorator") {
 			$data = [
 				'DefineD' => 'defined',
 				'NULL' 	  => null,
 				'Array'   => ['k1' => 'v1'],
-			];		
+			];
 		}
 		else {
 			$data = [
 				'defined' => 'defined',
 				'null' 	  => null,
 				'array'   => ['k1' => 'v1'],
-			];
+			];		
 		}
+		
 		switch($adapter) {
 			case null:
+				if ($decorator)
+					$ad = new $d($data);
+				else
+					$ad = $data;
+				break;
+			
 			case "ArrayAdapter":
-				$adapter = new $class();
+				if ($decorator)
+					$ad = new $d($data);
+				else
+					$ad = new $a($data);
 				break;
 				
 			case "FileAdapter":
-				$file = __DIR__ . "/" . "file.txt";
+				$file = __DIR__ . "/" . "file";
+				$initialized = false;
+				
 				if (file_exists($file))
 					unlink($file);
+								
+				if ($decorator) {
+					if ($decorator == "ReadOnlyDecorator")	{
+						$c = new Container($file);
+						$c->set($data);
+						$initialized = true;						
+					}
+					$ad = new $d($file);
+				}
+				else {
+					$ad = new $a($file);
+				}
+				
+				if (!$initialized)
+					$ad->set($data);
 
-				$adapter = new $class([], $file);
 				break;
 				
 			case "FileSystemAdapter":
-				$dir = __DIR__ . "/dir";
-				if (!file_exists($dir))
-					mkdir ($dir);
-				
-				$adapter = new $class($dir);
+				$path = __DIR__ . "/" . "test";
+				# if (is_dir($path)) {
+				# 	system('rm -r ' . $path);
+					#rmdir($path);
+				# }
+				# mkdir($path);
+				$ad = new $a($path);
+				$ad->set($data);
 				break;
 				
 			default:
 				
 		}
-		
-		# $adapter = $prophecy->reveal($data);
-		
-		
-		$decorator = "IrfanTOOR\\Container\\Decorator\\" . $decorator;
-		return new $decorator($data, $adapter);
+
+		return $ad;
 	}
 	
 	function getContainer($adapter, $decorator) {
-		$adapter = $this->getAdapter($adapter, $decorator);
-		
-		return new Container([], $adapter);
+		$d = $this->getData($adapter, $decorator);
+		return new Container($d);
 	}
-
+	
     /**
      * @dataProvider adProvider
      *
@@ -197,7 +225,6 @@ class ContainerTest extends PHPUnit_Framework_TestCase
 				 return new TestClass($arg);
 			});
 
-
 			$c = $container->get('closure');
 			$c1 = $c("hello");
 			$c2 = $c("hello");
@@ -239,7 +266,6 @@ class ContainerTest extends PHPUnit_Framework_TestCase
 				 return new TestClass($arg);
 			});
 
-
 			$c = $container->get('closure', "NULL");
 			$this->assertEquals("NULL", $c);
 		}
@@ -273,8 +299,10 @@ class ContainerTest extends PHPUnit_Framework_TestCase
      */
 	function testRemoveFile($adapter, $decorator)
 	{
-		$file = __DIR__ . "/" . "file.txt";
-		if (file_exists($file))
-			unlink($file);
+		 $file = __DIR__ . "/" . "file";
+		 if (file_exists($file))
+		  	unlink($file);
+			
+		 # system("rm -r " . __DIR__ . "/test");
 	}
 }

@@ -7,13 +7,13 @@ use IrfanTOOR\Container\Exception;
 class ReadOnlyDecorator extends AbstractDecorator
 {
 	protected $locked = false;
-	function __construct($init=[], $adapter=null) {
-		parent::__construct($init, $adapter);
+	function __construct($init=[]) {
+		parent::__construct($init);
 		
 		$this->locked = true;
 	}
 	
-	function set($id, $value) {
+	function set($id, $value=null) {
 		if ($this->locked)
 			return;
 			
