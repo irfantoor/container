@@ -1,17 +1,9 @@
-# Irfan's Container
+# IrfanTOOR Container
 
 An abstraction for many types of containers with a single API:
 
-Adapter for storage:
+Storage:
  - Arrays
- - Files
- - ...
- 
-Decorators:
- - NullDecorator
- - NoCaseDecorator
- - ReadOnlyDecorator
- - MD5Decorator
- - ...
- 
- 
+ - SQLite
+ - Directory
+ - Hybrid

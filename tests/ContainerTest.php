@@ -1,308 +1,470 @@
 <?php
- 
+
+use PHPUnit\Framework\TestCase;
+
 use IrfanTOOR\Container;
 
-require_once "TestClass.php";
-
-class ContainerTest extends PHPUnit_Framework_TestCase 
+class ContainerTest extends TestCase
 {
-	function adProvider() {
-		$a = [
-			null,
-			"ArrayAdapter",
-			"FileAdapter",
-			#"FileSystemAdapter"
+	function storageNameProvider() {
+		return [
+			["MemoryStorage"],
+			["SqliteStorage"],
+			["DirectoryStorage"],
+			["HybridStorage"],
+		];
+	}
+
+	function getStorage($storage_name) {
+	
+		$ns_storage_name = 'IrfanTOOR\\Storage\\' . $storage_name;
+		
+        switch ($storage_name) {
+        	case 'SqliteStorage':
+        		$storage = new $ns_storage_name([
+        			'file' => __DIR__ . '/hello.sqlite'
+        		]);
+        		
+        		$storage->clear();
+        		break;
+			
+			case 'DirectoryStorage':
+				$path = __DIR__ . '/tmp';
+				if (!is_dir($path))
+					mkdir($path);
+				
+        		$storage = new $ns_storage_name('path=' . $path);
+        		$storage->clear();
+        		break;
+        		
+        	case 'HybridStorage':
+        		$storage = new $ns_storage_name([
+        			'path' => __DIR__ . '/tmp'
+        		]);
+        		
+        		$storage->clear();
+        		break;        		
+        	
+        	case 'MemoryStorage':
+        	default:
+        		$storage = new $ns_storage_name();
+        		break;
+        }
+		
+		return $storage;
+	}
+	
+	function getContainer($storage_name) {
+		$storage = $this->getStorage($storage_name);
+
+		$c = new Container([
+			0       => 'Nothing',
+			'null'  => null,
+			'hello' => 'world!',
+        ], $storage);
+        
+        return $c;
+	}
+
+	function testInstanceOfConnectionString(): void
+	{
+		$c_string = 'path=/tmp/path;type=test';
+		$c_array  = [
+			'path' => '/tmp/path',
+			'type' => 'test',
 		];
 		
-		$d = [
-			null,
-			"NullDecorator",
-			"NoCaseDecorator",
-			"ReadOnlyDecorator",
-			# "MD5Decorator",
-		];
+		$a = new IrfanTOOR\Storage\AbstractStorage($c_string);
+		$b = new IrfanTOOR\Storage\AbstractStorage($c_array);
 		
-		$c = [];
-		foreach ($a as $aa) {
-			foreach ($d as $dd) {
-				$c[] = [$aa, $dd];
-			}
-		}
-		
-		return $c;
-	}
-
-	public function processArray($data) {
-		$a = [];
-		foreach ($data as $k=>$v) {
-			$a[strtolower($k)] = [$k, $v];
-		}
-		return $a;
-	}
-		
-	function getData($adapter, $decorator) {
-	
-		$a = $adapter ? "IrfanTOOR\\Container\\Adapter\\" . $adapter :
-			"IrfanTOOR\\Container\\Adapter\\ArrayAdapter";
-		
-		$d = "IrfanTOOR\\Container\\Decorator\\" . $decorator;
-		
-		if ($decorator == "NoCaseDecorator") {
-			$data = [
-				'DefineD' => 'defined',
-				'NULL' 	  => null,
-				'Array'   => ['k1' => 'v1'],
-			];
-		}
-		else {
-			$data = [
-				'defined' => 'defined',
-				'null' 	  => null,
-				'array'   => ['k1' => 'v1'],
-			];		
-		}
-		
-		switch($adapter) {
-			case null:
-				if ($decorator)
-					$ad = new $d($data);
-				else
-					$ad = $data;
-				break;
-			
-			case "ArrayAdapter":
-				if ($decorator)
-					$ad = new $d($data);
-				else
-					$ad = new $a($data);
-				break;
-				
-			case "FileAdapter":
-				$file = __DIR__ . "/" . "file";
-				$initialized = false;
-				
-				if (file_exists($file))
-					unlink($file);
-								
-				if ($decorator) {
-					if ($decorator == "ReadOnlyDecorator")	{
-						$c = new Container($file);
-						$c->set($data);
-						$initialized = true;						
-					}
-					$ad = new $d($file);
-				}
-				else {
-					$ad = new $a($file);
-				}
-				
-				if (!$initialized)
-					$ad->set($data);
-
-				break;
-				
-			case "FileSystemAdapter":
-				$path = __DIR__ . "/" . "test";
-				# if (is_dir($path)) {
-				# 	system('rm -r ' . $path);
-					#rmdir($path);
-				# }
-				# mkdir($path);
-				$ad = new $a($path);
-				$ad->set($data);
-				break;
-				
-			default:
-				
-		}
-
-		return $ad;
+		$this->assertEquals($a, $b);
 	}
 	
-	function getContainer($adapter, $decorator) {
-		$d = $this->getData($adapter, $decorator);
-		return new Container($d);
+	
+    /**
+     * @dataProvider storageNameProvider
+     *
+     * @param $storage_name
+     */		
+	function testInstanceOfContainer($storage_name): void
+	{
+		$c = $this->getContainer($storage_name);
+		
+		$this->assertInstanceOf( IrfanTOOR\Container::class, $c );
 	}
 	
     /**
-     * @dataProvider adProvider
+     * @dataProvider storageNameProvider
      *
-     * @param $adapter
-     * @param $decorator
+     * @param $storage_name
      */	
-	function testContainerClassExists($adapter, $decorator)
+	function testIdIsAStringWhileGetting($storage_name): void 
 	{
-		$container = $this->getContainer($adapter, $decorator);
-	   	$this->assertInstanceOf('IrfanTOOR\Container', $container);
-	}
-	
-    /**
-     * @dataProvider adProvider
-     *
-     * @param $adapter
-     * @param $decorator
-     */
-	function testContainerHasAnEntry($adapter, $decorator)
-	{
-		$container = $this->getContainer($adapter, $decorator);
-	
-		$this->assertTrue($container->has('defined'));
-		$this->assertTrue($container->has('null'));
-		$this->assertTrue($container->has('array'));
-		$this->assertFalse($container->has('not-defined'));
-	}
-	
-    /**
-     * @dataProvider adProvider
-     *
-     * @param $adapter
-     * @param $decorator
-     */	
-	function testContainerGetEntry($adapter, $decorator)
-	{
-		$container = $this->getContainer($adapter, $decorator);
+		$c = $this->getContainer($storage_name);
 			
-		$this->assertEquals('defined', $container->get('defined'));
-		$this->assertNull($container->get('null'));
-		$this->assertEquals("NULL", $container->get('undefined', "NULL"));
-		$this->assertArrayHasKey('k1', $container->get('array'));
-		$this->assertEquals('v1', $container->get('array')['k1']);
-		$this->assertEquals('hello', $container->get("undefind", "hello"));
-	}
-
-    /**
-     * @dataProvider adProvider
-     *
-     * @param $adapter
-     * @param $decorator
-     */	
-	function testContainerGetException($adapter, $decorator)
-	{
-		$container = $this->getContainer($adapter, $decorator);
-		# NotFoundException
-		$this->expectException(IrfanTOOR\Container\NotFoundException::class);
-		$this->expectExceptionMessage('No entry was found for **not-defined** identifier');
-		$exception = $container->get("not-defined");
+		$this->assertNull($c->get(0));
 	}
 	
     /**
-     * @dataProvider adProvider
+     * @dataProvider storageNameProvider
      *
-     * @param $adapter
-     * @param $decorator
-     */
-	function testContainerSetAnEntry($adapter, $decorator)
+     * @param $storage_name
+     */		
+	function testFindEntryById($storage_name): void 
 	{
-		$container = $this->getContainer($adapter, $decorator);
+		$c = $this->getContainer($storage_name);
 		
-		if ($decorator != "ReadOnlyDecorator") {
-			# define an entry not previously defined
-			$this->assertFalse($container->has('not-defined'));
-			$container->set('not-defined', null);
-			$this->assertTrue($container->has('not-defined'));
-			$this->assertNull($container->get('not-defined'));
-
-			# define an entry previously defined
-			$container->set('not-defined', 'now-defined');
-			$this->assertTrue($container->has('not-defined'));
-			$this->assertEquals('now-defined', $container->get('not-defined'));
-
-			# Set a class
-			$class = new TestClass('hello');
-			$container->set('class', $class);
-
-			$c1 = $container->get('class');
-			$c2 = $container->get('class');
-
-			$this->assertInstanceOf('TestClass', $c1);
-			$this->assertEquals($c1, $c2);
-			$this->assertSame($c1, $c2);
-			$this->assertEquals("hello", $c1->value());
-			$this->assertSame($c1->value, $c2->value);
-
-			# Set a closure
-			$container->set('closure', function($arg=null){
-				 return new TestClass($arg);
-			});
-
-			$c = $container->get('closure');
-			$c1 = $c("hello");
-			$c2 = $c("hello");
-			$c3 = $c();
-
-			$this->assertInstanceOf('TestClass', $c1);
-			$this->assertEquals($c1, $c2);
-			$this->assertNotSame($c1, $c2);
-			$this->assertEquals("hello", $c1->value());
-			$this->assertNull($c3->value());
-		}
-		else {
-			# define an entry not previously defined
-			$this->assertFalse($container->has('not-defined'));
-			$container->set('not-defined', null);
-			$this->assertFalse($container->has('not-defined'));
-			$this->assertEquals("NULL",$container->get('not-defined', "NULL"));
-
-			# define an entry previously defined
-			$container->set('not-defined', 'now-defined');
-			$this->assertFalse($container->has('not-defined'));
-			$this->assertEquals("NULL",$container->get('not-defined', "NULL"));
-
-			# Set a class
-			$class = new TestClass('hello');
-			$container->set('class', $class);
-
-			$c1 = $container->get('class',"NULL");
-			$c2 = $container->get('class', "NULL");
-
-			$this->assertEquals("NULL", $c1);
-			$this->assertEquals($c1, $c2);
-			$this->assertSame($c1, $c2);
-			# $this->assertEquals("hello", $c1->value());
-			# $this->assertSame($c1->value, $c2->value);
-
-			# Set a closure
-			$container->set('closure', function($arg=null){
-				 return new TestClass($arg);
-			});
-
-			$c = $container->get('closure', "NULL");
-			$this->assertEquals("NULL", $c);
-		}
+		$this->assertNull($c->get('null'));
+		$this->assertEquals('world!', $c->get('hello'));
 	}
 
     /**
-     * @dataProvider adProvider
+     * @dataProvider storageNameProvider
      *
-     * @param $adapter
-     * @param $decorator
-     */
-    function testContainerRemoveAnEntry($adapter, $decorator)
+     * @param $storage_name
+     */		
+	function testIdNotFoundDefaultFromEmptyContainer($storage_name): void 
 	{
-		$container = $this->getContainer($adapter, $decorator);
+		$storage = $this->getStorage($storage_name);
+		$c = new Container([], $storage);
 		
-		$this->assertEquals("defined", $container->get("defined"));
-		$container->remove("defined");
-		if ($decorator != "ReadOnlyDecorator") {
-			$this->assertFalse($container->has("defined"));
-		}
-		else {
-			$this->assertTrue($container->has("defined"));
-		}
+		$this->assertNull($c->get('something'));
+		$this->assertEquals('Hello', $c->get('something', 'Hello'));
 	}
 
     /**
-     * @dataProvider adProvider
+     * @dataProvider storageNameProvider
      *
-     * @param $adapter
-     * @param $decorator
-     */
-	function testRemoveFile($adapter, $decorator)
+     * @param $storage_name
+     */	
+	function testIdNotFoundExceptionFromContainerWithValues($storage_name): void 
 	{
-		 $file = __DIR__ . "/" . "file";
-		 if (file_exists($file))
-		  	unlink($file);
-			
-		 # system("rm -r " . __DIR__ . "/test");
+		$c = $this->getContainer($storage_name);
+		
+		$this->assertNull($c->get('something'));
+		$this->assertEquals('Hello', $c->get('something', 'Hello'));
+	}
+	
+    /**
+     * @dataProvider storageNameProvider
+     *
+     * @param $storage_name
+     */		
+	function testIdIsAStringWhileUsingHas($storage_name): void {
+		$c = $this->getContainer($storage_name);
+		
+        $this->assertFalse($c->has(0));
+        $this->assertFalse($c->has(null));
+        $this->assertTrue($c->has('null'));
+	}
+
+    /**
+     * @dataProvider storageNameProvider
+     *
+     * @param $storage_name
+     */			
+	function testHasAPredefinedValue($storage_name): void 
+	{
+		$c = $this->getContainer($storage_name);
+		
+        $this->assertTrue($c->has('hello'));
+	}
+
+    /**
+     * @dataProvider storageNameProvider
+     *
+     * @param $storage_name
+     */		
+	function testDoesNotHaveTheUndefinedValue($storage_name): void 
+	{
+		$c = $this->getContainer($storage_name);
+		
+        $this->assertFalse($c->has('something'));
+	}
+
+    /**
+     * @dataProvider storageNameProvider
+     *
+     * @param $storage_name
+     */		
+	function testSetUndefinedValue($storage_name): void
+	{
+		$c = $this->getContainer($storage_name);
+		
+		$this->assertFalse($c->has('something'));
+		$c->set('something', 'somevalue');
+		$this->assertTrue($c->has('something'));
+		$this->assertEquals('somevalue', $c->get('something'));
+	}
+
+    /**
+     * @dataProvider storageNameProvider
+     *
+     * @param $storage_name
+     */		
+	function testSetDefinedValue($storage_name): void
+	{
+		$c = $this->getContainer($storage_name);
+		
+		$this->assertTrue($c->has('null'));
+		$this->assertNull($c->get('null'));
+		$c->set('null', 0);
+		$this->assertTrue($c->has('null'));
+		$this->assertNotNull($c->get('null'));
+		$this->assertEquals(0, $c->get('null'));
+	}
+
+    /**
+     * @dataProvider storageNameProvider
+     *
+     * @param $storage_name
+     */		
+	function testSetAnArray($storage_name): void
+	{
+		$c = $this->getContainer($storage_name);
+		
+		$this->assertFalse($c->has('array'));
+		$this->assertFalse($c->has('sky'));
+		
+		$c->set([
+			'array' => ['an', 'array'],
+			'sky' => 'blue',
+		]);
+		
+		$this->assertTrue($c->has('array'));
+		$this->assertEquals(['an', 'array'], $c->get('array'));
+		
+		$this->assertTrue($c->has('sky'));
+		$this->assertEquals('blue', $c->get('sky'));
+	}
+	
+	/**
+     * @dataProvider storageNameProvider
+     *
+     * @param $storage_name
+     */	
+	function testRemoveUndefined($storage_name): void
+	{
+		$c = $this->getContainer($storage_name);
+		
+		$this->assertFalse($c->has('something'));
+		$c->remove('something');
+		$this->assertFalse($c->has('something'));
+	}
+
+    /**
+     * @dataProvider storageNameProvider
+     *
+     * @param $storage_name
+     */	
+	function testRemoveDefined($storage_name): void
+	{
+		$c = $this->getContainer($storage_name);
+		
+		$this->assertTrue($c->has('hello'));
+		$c->remove('hello');
+		$this->assertFalse($c->has('hello'));
+	}
+	
+    /**
+     * @dataProvider storageNameProvider
+     *
+     * @param $storage_name
+     */	
+	function testClearContainer($storage_name): void
+	{
+		$c = $this->getContainer($storage_name);
+		
+		$this->assertTrue($c->has('null'));
+		$this->assertTrue($c->has('hello'));
+		$c->clear();
+		$this->assertFalse($c->has('null'));
+		$this->assertFalse($c->has('hello'));
+	}	
+
+    /**
+     * @dataProvider storageNameProvider
+     *
+     * @param $storage_name
+     */	
+	function testToArray($storage_name): void
+	{
+		$c = $this->getContainer($storage_name);
+		
+		$this->assertTrue(is_array($c->toArray()));
+		$this->assertEquals([
+			'null'  => null,
+			'hello' => 'world!',
+        ], $c->toArray());
+	}
+
+    /**
+     * @dataProvider storageNameProvider
+     *
+     * @param $storage_name
+     */	
+	function testSetReadOnly($storage_name): void
+	{
+		$storage = $this->getStorage($storage_name);
+		
+		$c = (new Container([
+			'null'  => null,
+			'hello' => 'world!',
+        ], $storage, Container::LOCKED));
+		
+		$this->assertTrue($c->has('hello'));
+		$this->assertEquals('world!', $c->get('hello'));
+		$c->set('hello', 'something else');
+		$this->assertEquals('world!', $c->get('hello'));
+	}
+
+    /**
+     * @dataProvider storageNameProvider
+     *
+     * @param $storage_name
+     */	
+	function testRemoveReadOnly($storage_name): void
+	{
+		$storage = $this->getStorage($storage_name);
+		
+		$c = (new Container([
+			'null'  => null,
+			'hello' => 'world!',
+        ], $storage, Container::LOCKED));
+		
+		$this->assertTrue($c->has('hello'));
+		$c->remove('hello');
+		$this->assertTrue($c->has('hello'));
+	}
+	
+    /**
+     * @dataProvider storageNameProvider
+     *
+     * @param $storage_name
+     */	
+	function testClearReadOnly($storage_name): void
+	{
+		$storage = $this->getStorage($storage_name);
+		
+		$c = (new Container([
+			'null'  => null,
+			'hello' => 'world!',
+        ], $storage, Container::LOCKED));
+		
+		$this->assertTrue($c->has('null'));
+		$this->assertTrue($c->has('hello'));
+		$c->clear();
+		$this->assertTrue($c->has('null'));
+		$this->assertTrue($c->has('hello'));
+	}
+	
+    /**
+     * @dataProvider storageNameProvider
+     *
+     * @param $storage_name
+     */	
+	function testHasNoCase($storage_name): void
+	{
+		$storage = $this->getStorage($storage_name);
+		
+		$c = (new Container([
+			'null'  => null,
+			'hello' => 'world!',
+        ], $storage, Container::NOCASE));
+        
+		$this->assertTrue($c->has('hello'));
+		$this->assertTrue($c->has('NULL'));
+		$this->assertTrue($c->has('HELLO'));
+	}
+
+    /**
+     * @dataProvider storageNameProvider
+     *
+     * @param $storage_name
+     */	
+	function testGetNoCase($storage_name): void
+	{
+		$storage = $this->getStorage($storage_name);
+		
+		$c = (new Container([
+			'Null'  => null,
+			'Hello' => 'world!',
+        ], $storage, Container::NOCASE));
+        
+		$this->assertNull($c->get('NULL'));
+		$this->assertEquals('world!', $c->get('Hello'));
+	}
+	
+    /**
+     * @dataProvider storageNameProvider
+     *
+     * @param $storage_name
+     */	
+	function testSetNoCase($storage_name): void
+	{
+		$storage = $this->getStorage($storage_name);
+		
+		$c = (new Container([
+			'Null'  => null,
+			'Hello' => 'world!',
+        ], $storage, Container::NOCASE));
+		
+		$this->assertFalse($c->has('something'));
+		$this->assertFalse($c->has('SomeThing'));
+		$c->set('Something', 'some value');
+		$c->set('HELLO', 'WORLD!');
+		$this->assertTrue($c->has('something'));
+		$this->assertTrue($c->has('SomeThing'));
+		
+		$this->assertEquals([
+			'Null'  => null,
+			'Something' => 'some value',
+			'HELLO' => 'WORLD!',
+        ], $c->toArray());
+	}
+
+    /**
+     * @dataProvider storageNameProvider
+     *
+     * @param $storage_name
+     */
+	function testRemoveNoCase($storage_name): void
+	{
+		$storage = $this->getStorage($storage_name);
+		
+		$c = (new Container([
+			'Null'  => null,
+			'Hello' => 'world!',
+        ], $storage, Container::NOCASE));
+        
+		$this->assertTrue($c->has('null'));
+		$c->remove('Null');
+		$this->assertFalse($c->has('null'));
+		
+		$this->assertEquals([
+			'Hello' => 'world!',
+		], $c->toArray());
+	}
+
+    /**
+     * @dataProvider storageNameProvider
+     *
+     * @param $storage_name
+     */
+	function testArrayNoCase($storage_name): void
+	{
+		$storage = $this->getStorage($storage_name);
+		
+		$c = (new Container([
+			'Null'  => null,
+			'Hello' => 'world!',
+        ], $storage, Container::NOCASE));
+		
+		$c->set('HELLO', 'WORLD!');
+		
+		$this->assertEquals([
+			'Null' => null,
+			'HELLO' => 'WORLD!',
+		], $c->toArray());
 	}
 }
