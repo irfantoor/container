@@ -25,21 +25,6 @@ $container = new IrfanTOOR\Container(
 );
 ```
 
-For a persistent storage, you need to initialize a storage class and pass the
-storage class as initializer to the container and voila, every thing else remains the same, but the contents of your container are now persistent.
-
-```php
-$storage = IrfanTOOR\Container\Storage\SqliteStorage(
-  [
-    'path' => 'path/to/my/storage.sqlite',
-  ]
-);
-
-$container = new IrfanTOOR\Container($storage);
-$container->set('hello' => 'world');
-echo $container['hash'];
-```
-
 ## Setting
 
 You can by set a service in the Container by using the method 'set':
@@ -99,7 +84,7 @@ you can also use the array access:
 $hash = $container['hash'];
 ```
 
-## Checking if a value is present in the container 
+## Checking if a value is present in the container
 
 You can use the method 'has' to check if the container has an entry identified
 with the identifier id:
