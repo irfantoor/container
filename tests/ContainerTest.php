@@ -8,12 +8,29 @@
  * @link      https://github.com/irfantoor/container/tests/ContainerTest.php
  */
 
-require 'Service.php';
-
 use IrfanTOOR\Container;
-use PHPUnit\Framework\TestCase;
+use IrfanTOOR\Test;
 
-class ContainerTest extends TestCase
+class Service
+{
+    public $id;
+
+    function __construct($value)
+    {
+        $this->id = $value;
+    }
+
+    function __invoke()
+    {
+        return $this->id;
+    }
+}
+
+
+interface I {}
+class C implements I {}
+
+class ContainerTest extends Test
 {
 	function getContainer($init = null)
 	{
@@ -32,7 +49,7 @@ class ContainerTest extends TestCase
 		$c = $this->getContainer();
 
 		$this->assertInstanceOf( IrfanTOOR\Container::class, $c );
-		$this->assertInstanceOf( Psr\Container\ContainerInterface::class, $c );
+		$this->assertImplements( Psr\Container\ContainerInterface::class, $c );
 	}
 
 	function testHas()
@@ -43,12 +60,15 @@ class ContainerTest extends TestCase
 		$this->assertTrue($c->has('service'));
 		$this->assertFalse($c->has(0));
 		$this->assertFalse($c->has('undefined'));
+		$this->assertFalse($c->has(new Exception));
+		# $this->assertException($c->has());
 
 		$this->assertTrue(isset($c['null']));
 		$this->assertTrue(isset($c['hello']));
 		$this->assertTrue(isset($c['service']));
 		$this->assertFalse(isset($c[0]));
 		$this->assertFalse(isset($c['undefined']));
+		$this->assertFalse(isset($c[new Exception]));
 	}
 
 	function testGet()
@@ -62,6 +82,22 @@ class ContainerTest extends TestCase
 		$this->assertEquals(null,     $c['null']);
 		$this->assertEquals('world!', $c['hello']);
 		$this->assertEquals('value',  $c['service']);
+
+		$this->assertException(function() use($c){
+			$c->get(4);
+		});
+
+		$this->assertExceptionMessage('id must be a string', function() use($c){
+			$c->get(4);
+		});
+
+		$this->assertException(function() use($c){
+			$c->get('unknown');
+		});
+
+		$this->assertExceptionMessage('No entry was found for **unknown**', function() use($c){
+			$c->get('unknown');
+		});
 	}
 
 	function testSet()
@@ -71,6 +107,14 @@ class ContainerTest extends TestCase
 
 		$c->set('undefined', new Service('defined!'));
 
+		$this->assertException(function() use($c){
+			$c->set(null, 2);
+		});
+
+		$this->assertExceptionMessage('id must be a string', function() use($c){
+			$c->set(null, 2);
+		});
+		
 		$this->assertTrue($c->has('undefined'));
 		$this->assertEquals('defined!', $c->get('undefined'));
 
@@ -80,16 +124,6 @@ class ContainerTest extends TestCase
 		});
 		$v1 = $c->get('service_one');
 		$v2 = $c->get('service_one');
-		$this->assertInstanceOf(Service::class, $v1);
-		$this->assertInstanceOf(Service::class, $v2);
-		$this->assertSame($v1, $v2);
-
-		$c['service_two'] = function() {
-			return new Service('factory');
-		};
-
-		$v1 = $c->get('service_two');
-		$v2 = $c->get('service_two');
 		$this->assertInstanceOf(Service::class, $v1);
 		$this->assertInstanceOf(Service::class, $v2);
 		$this->assertSame($v1, $v2);
@@ -123,6 +157,14 @@ class ContainerTest extends TestCase
 		$this->assertInstanceOf(Service::class, $v1);
 		$this->assertInstanceOf(Service::class, $v2);
 		$this->assertNotSame($v1, $v2);
+
+		$this->assertException(function() use($c){
+			$c->set('factory', 'hello');
+		});
+
+		$this->assertExceptionMessage('A factory exists with id: factory', function() use($c){
+			$c->set('factory', 'hello');
+		});		
 	}
 
 	function testRemove()
