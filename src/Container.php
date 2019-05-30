@@ -29,8 +29,35 @@ class Container implements
     Countable,
     IteratorAggregate
 {
+    const NAME        = "Irfan's Container";
+    const DESCRIPTION = "An abstraction for many types of containers with a single API.";
+
+    /**
+     * Container Version
+     *
+     * @var const
+     */
+    const VERSION = "1.0.3"; // @@VERSION
+
+    /**
+     * Collection to store data
+     *
+     * @var Collection Object
+     */
     protected $collection;
+
+    /**
+     * keeps track of frozen functions
+     *
+     * @var array
+     */
     protected $frozen;
+
+    /**
+     * keeps track of factories
+     *
+     * @var array
+     */
     protected $factory;
 
     /**
@@ -44,6 +71,20 @@ class Container implements
     }
 
     /**
+     * Set Multiple key, values pairs
+     *
+     * @param Array key value pairs.
+     *
+     * @return nothing
+     */
+    public function setMultiple($data)
+    {
+        foreach ($data as $k=>$v) {
+            $this->set($k, $v);
+        }
+    }
+
+    /**
      * Sets the container values
      *
      * @param string $id    Identifier of the entry.
@@ -53,20 +94,14 @@ class Container implements
      */
     public function set($id, $value=null)
     {
-        if (is_array($id)) {
-            foreach ($id as $k=>$v) {
-                $this->set($k, $v);
-            }
+        if (!is_string($id)) {
+            throw new ContainerException('id must be a string', 1);
+        } elseif (isset($this->frozen[$id])) {
+            throw new ContainerException('A service started with id: ' . $id);
+        } elseif (isset($this->factory[$id])) {
+            throw new ContainerException('A factory exists with id: '. $id);
         } else {
-            if (!is_string($id)) {
-                throw new ContainerException('id must be a string', 1);
-            } elseif (isset($this->frozen[$id])) {
-                throw new ContainerException('A service started with id: ' . $id);
-            } elseif (isset($this->factory[$id])) {
-                throw new ContainerException('A factory exists with id: '. $id);
-            } else {
-                $this->collection->set($id, $value);
-            }
+            $this->collection->set($id, $value);
         }
     }
 

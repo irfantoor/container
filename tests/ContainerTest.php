@@ -132,7 +132,7 @@ class ContainerTest extends Test
 	function testSetMultiple()
 	{
 		$c = $this->getContainer();
-		$c->set(
+		$c->setMultiple(
 			[
 				'hello'     => 'another world!',
 				'null'      => 'not null',
