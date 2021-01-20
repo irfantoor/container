@@ -10,6 +10,7 @@
 
 use IrfanTOOR\Container;
 use IrfanTOOR\Test;
+use IrfanTOOR\Container\ContainerException;
 
 class Service
 {
@@ -61,14 +62,21 @@ class ContainerTest extends Test
 		$this->assertFalse($c->has(0));
 		$this->assertFalse($c->has('undefined'));
 		$this->assertFalse($c->has(new Exception));
-		# $this->assertException($c->has());
-
 		$this->assertTrue(isset($c['null']));
 		$this->assertTrue(isset($c['hello']));
 		$this->assertTrue(isset($c['service']));
 		$this->assertFalse(isset($c[0]));
 		$this->assertFalse(isset($c['undefined']));
 		$this->assertFalse(isset($c[new Exception]));
+	}
+
+	/**
+	 * throws: ArgumentCountError::class
+	 */
+	function testHasException()
+	{
+		$c = $this->getContainer();
+		$this->assertException($c->has());
 	}
 
 	function testGet()
@@ -82,22 +90,52 @@ class ContainerTest extends Test
 		$this->assertEquals(null,     $c['null']);
 		$this->assertEquals('world!', $c['hello']);
 		$this->assertEquals('value',  $c['service']);
+	}
 
-		$this->assertException(function() use($c){
-			$c->get(4);
-		});
+	function badEntries()
+	{
+		return [
+			null,
+			[],
+			new stdClass(),
+			['hello' => 'world'],
+			0,
+			false,
+			true,
+			2.1,
+		];
+	}
 
-		$this->assertExceptionMessage('id must be a string', function() use($c){
-			$c->get(4);
-		});
+	/**
+	 * throws: Exception::class
+	 * message: id must be a string
+	 * k: $this->badEntries()
+	 */
+	function testGetException($k)
+	{
+		$c = $this->getContainer();
+		$c->get($k);
+	}
 
-		$this->assertException(function() use($c){
-			$c->get('unknown');
-		});
+	function unknownEntries()
+	{
+		return [
+			'spider-man',
+			'bat-man',
+			'unknown',
+			'known'
+		];
+	}
 
-		$this->assertExceptionMessage('No entry was found for **unknown**', function() use($c){
-			$c->get('unknown');
-		});
+	/**
+	 * throws: Exception::class
+	 * message: No entry was found for **{$k}**
+	 * k: $this->unknownEntries()
+	 */
+	function testGetUnknownException($k)
+	{
+		$c = $this->getContainer();
+		$c->get($k);
 	}
 
 	function testSet()
@@ -106,14 +144,6 @@ class ContainerTest extends Test
 		$this->assertFalse($c->has('undefined'));
 
 		$c->set('undefined', new Service('defined!'));
-
-		$this->assertException(function() use($c){
-			$c->set(null, 2);
-		});
-
-		$this->assertExceptionMessage('id must be a string', function() use($c){
-			$c->set(null, 2);
-		});
 		
 		$this->assertTrue($c->has('undefined'));
 		$this->assertEquals('defined!', $c->get('undefined'));
@@ -127,6 +157,17 @@ class ContainerTest extends Test
 		$this->assertInstanceOf(Service::class, $v1);
 		$this->assertInstanceOf(Service::class, $v2);
 		$this->assertSame($v1, $v2);
+	}
+
+	/**
+	 * throws: Exception::class
+	 * message: id must be a string
+	 * k: $this->badEntries()
+	 */
+	function testSetException($k)
+	{
+		$c = $this->getContainer();
+		$c->set($k, 'something');
 	}
 
 	function testSetMultiple()
@@ -157,14 +198,21 @@ class ContainerTest extends Test
 		$this->assertInstanceOf(Service::class, $v1);
 		$this->assertInstanceOf(Service::class, $v2);
 		$this->assertNotSame($v1, $v2);
+	}
 
-		$this->assertException(function() use($c){
-			$c->set('factory', 'hello');
+	/**
+	 * throws: Exception::class
+	 * message: A factory exists with id: factory
+	 */
+	function testFactoryException()
+	{
+		$c = $this->getContainer();
+
+		$c->factory('factory', function(){
+			return new Service('factory');
 		});
 
-		$this->assertExceptionMessage('A factory exists with id: factory', function() use($c){
-			$c->set('factory', 'hello');
-		});		
+		$c->set('factory', 'hello');
 	}
 
 	function testRemove()

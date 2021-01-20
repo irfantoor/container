@@ -31,13 +31,7 @@ class Container implements
 {
     const NAME        = "Irfan's Container";
     const DESCRIPTION = "An abstraction for many types of containers with a single API.";
-
-    /**
-     * Container Version
-     *
-     * @var const
-     */
-    const VERSION = "1.0.3"; // @@VERSION
+    const VERSION     = "1.0.4";
 
     /**
      * Collection to store data
