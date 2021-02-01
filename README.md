@@ -1,5 +1,7 @@
 # IrfanTOOR\\Container
 
+Note: this Readme will be updated shortly, it reflects the functionality of v1.0.4
+
 # Container
 Container implementing Psr\\ContainerInterface, ArrayAccess, Countable and IteratorAggregate.
 
