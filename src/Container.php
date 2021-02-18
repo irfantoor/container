@@ -27,7 +27,7 @@ class Container extends AbstractContainer implements ContainerInterface
 {
     const NAME        = "Irfan's Container";
     const DESCRIPTION = "Simple container to contain/create your objects and data";
-    const VERSION     = "1.1";
+    const VERSION     = "1.2";
 
     /**
      * Container constructor

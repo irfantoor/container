@@ -33,6 +33,9 @@ abstract class AbstractContainer implements ArrayAccess
      */
     protected $processors  = [];
 
+    /** @var Extensions */
+    protected $extensions = [];
+
     /**
      * Initializes the storage
      *
@@ -182,6 +185,49 @@ abstract class AbstractContainer implements ArrayAccess
             $id = $p->processId($id);
 
         return $this->adapter->remove($id);
+    }
+
+    # =========================================================================== #
+    # Extensions
+    # Note: any class can be addded as an extension, all of the functions of the
+    # class can be called directly form class, provided
+    # =========================================================================== #
+
+    /**
+     * Adds a class to container as an extension
+     */
+    public function addExtension(string $name, $class)
+    {
+        if (!is_object($class))
+            throw new ContainerException("Only objects can be added as extensions.");
+
+        $this->extensions[$name] = $class;
+    }
+
+    /**
+     * Helps calling the method from the extensions
+     */
+    public function __call($method, $args)
+    {
+        foreach ($this->extensions as $name => $ext) {
+            if (method_exists($ext, $method))
+                return call_user_func_array([$ext, $method], $args);
+        }
+    }
+
+    /**
+     * Forcing a call to a method from a specific extension
+     *
+     * @param string $name   Name of the extension, used while adding
+     * @param string $mathod Name of the method to call
+     * @param array  $args   Array of arguments to be passed to the method
+     */
+    public function call(string $name, string $method, array $args = [])
+    {
+        if (!isset($this->extensions[$name]))
+            throw new ContainerException("Extension $name, is not present.");
+        
+        return call_user_func_array([$this->extensions[$name], $method], $args);
     }
 
     # =========================================================================== #
