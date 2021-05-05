@@ -16,7 +16,7 @@
     "require": {
         "psr/container": "^1.0",
         "league/flysystem": "^2.0",
-        "php-di/php-di": "^6.3"
+        "opis/closure": "^3.6"
     },
     "require-dev": {
         "irfantoor/test": "^0.7.6",
